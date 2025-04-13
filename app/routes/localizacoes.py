@@ -4,6 +4,8 @@ from app.models.localizacao import Localizacao
 from app.utils.responses import success_response, error_response
 from app.utils.auth import require_auth
 from app.schemas.localizacao_schema import LocalizacaoSchema, localizacao_create_schema
+from app.utils.redis_cache import redis_client
+import json
 
 bp = Blueprint('localizacoes', __name__, url_prefix='/api/localizacoes')
 localizacao_schema = LocalizacaoSchema()
@@ -13,16 +15,30 @@ localizacoes_schema = LocalizacaoSchema(many=True)
 @jwt_required()
 @require_auth
 def listar_localizacoes():
+    localizacoes_cache = redis_client.get('localizacoes')
+    if localizacoes_cache:
+        return success_response(json.loads(localizacoes_cache))
+
     localizacoes = Localizacao.select()
-    return success_response(localizacoes_schema.dump(list(localizacoes)))
+    localizacoes_data = localizacoes_schema.dump(list(localizacoes))
+    
+    redis_client.set('localizacoes', json.dumps(localizacoes_data), ex=60)
+    return success_response(localizacoes_data)
 
 @bp.route('/<int:id>', methods=['GET'])
 @jwt_required()
 @require_auth
 def obter_localizacao(id):
+    localizacao_cache = redis_client.get(f'localizacao:{id}')
+    if localizacao_cache:
+        return success_response(json.loads(localizacao_cache))
+
     try:
         localizacao = Localizacao.get_by_id(id)
-        return success_response(localizacao_schema.dump(localizacao))
+        localizacao_data = localizacao_schema.dump(localizacao)
+        
+        redis_client.set(f'localizacao:{id}', json.dumps(localizacao_data), ex=60)
+        return success_response(localizacao_data)
     except Localizacao.DoesNotExist:
         return error_response("Localização não encontrada", 404)
 
@@ -36,14 +52,14 @@ def criar_localizacao():
         if not data:
             return error_response("Dados inválidos", 400)
         
-        # Validar e carregar os dados
         localizacao_data = localizacao_create_schema.load(data)
         
-        # Criar a localização usando o novo método
         localizacao = Localizacao.criar_localizacao(
             nome=localizacao_data['nome'],
             estoque_id=localizacao_data['estoque_id']
         )
+        
+        redis_client.delete('localizacoes')
         
         return success_response(localizacao_schema.dump(localizacao), "Localização criada com sucesso", 201)
     except ValueError as e:
@@ -67,6 +83,9 @@ def atualizar_localizacao(id):
             setattr(localizacao, key, value)
         localizacao.save()
         
+        redis_client.delete('localizacoes')
+        redis_client.delete(f'localizacao:{id}')
+        
         return success_response(localizacao_schema.dump(localizacao), "Localização atualizada com sucesso")
     except Localizacao.DoesNotExist:
         return error_response("Localização não encontrada", 404)
@@ -80,6 +99,10 @@ def deletar_localizacao(id):
     try:
         localizacao = Localizacao.get_by_id(id)
         localizacao.delete_instance()
+        
+        redis_client.delete('localizacoes')
+        redis_client.delete(f'localizacao:{id}')
+        
         return success_response(None, "Localização deletada com sucesso")
     except Localizacao.DoesNotExist:
         return error_response("Localização não encontrada", 404) 
