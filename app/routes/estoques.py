@@ -4,6 +4,8 @@ from app.models.estoque import Estoque
 from app.utils.responses import success_response, error_response
 from app.utils.auth import require_auth
 from app.schemas.estoque_schema import EstoqueSchema, EstoqueCreateSchema
+from app.utils.redis_cache import redis_client
+import json  # Importando o módulo json
 
 bp = Blueprint('estoques', __name__, url_prefix='/api/estoques')
 estoque_schema = EstoqueSchema()
@@ -14,16 +16,38 @@ estoque_create_schema = EstoqueCreateSchema()
 @jwt_required()
 @require_auth
 def listar_estoques():
+    # Verifica se os estoques estão no cache
+    estoques = redis_client.get('estoques')
+    if estoques:
+        return success_response(json.loads(estoques))
+
+    # Se não estiver no cache, busca no banco de dados
     estoques = Estoque.select()
-    return success_response(estoques_schema.dump(list(estoques)))
+    # Serializa os dados
+    estoques_data = estoques_schema.dump(list(estoques))
+    
+    # Armazena os dados no cache
+    redis_client.set('estoques', json.dumps(estoques_data), ex=60)  # Cache por 60 segundos
+    return success_response(estoques_data)
 
 @bp.route('/<int:id>', methods=['GET'])
 @jwt_required()
 @require_auth
 def obter_estoque(id):
+    # Verifica se o estoque está no cache
+    estoque_cache = redis_client.get(f'estoque:{id}')
+    if estoque_cache:
+        return success_response(json.loads(estoque_cache))
+
+    # Se não estiver no cache, busca no banco de dados
     try:
         estoque = Estoque.get_by_id(id)
-        return success_response(estoque_schema.dump(estoque))
+        # Serializa os dados
+        estoque_data = estoque_schema.dump(estoque)
+        
+        # Armazena os dados no cache
+        redis_client.set(f'estoque:{id}', json.dumps(estoque_data), ex=60)  # Cache por 60 segundos
+        return success_response(estoque_data)
     except Estoque.DoesNotExist:
         return error_response("Estoque não encontrado", 404)
 
@@ -42,6 +66,9 @@ def criar_estoque():
         
         # Criar o estoque usando o novo método
         estoque = Estoque.criar_estoque(estoque_data['nome'])
+        
+        # Invalida o cache após a criação
+        redis_client.delete('estoques')
         
         return success_response(estoque_schema.dump(estoque), "Estoque criado com sucesso", 201)
     except ValueError as e:
@@ -65,6 +92,9 @@ def atualizar_estoque(id):
             setattr(estoque, key, value)
         estoque.save()
         
+        # Invalida o cache após a atualização
+        redis_client.delete('estoques')
+        
         return success_response(estoque_schema.dump(estoque), "Estoque atualizado com sucesso")
     except Estoque.DoesNotExist:
         return error_response("Estoque não encontrado", 404)
@@ -78,6 +108,10 @@ def deletar_estoque(id):
     try:
         estoque = Estoque.get_by_id(id)
         estoque.delete_instance()
+        
+        # Invalida o cache após a exclusão
+        redis_client.delete('estoques')
+        
         return success_response(None, "Estoque deletado com sucesso")
     except Estoque.DoesNotExist:
         return error_response("Estoque não encontrado", 404) 
