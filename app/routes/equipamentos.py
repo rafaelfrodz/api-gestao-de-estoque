@@ -11,20 +11,25 @@ from app.utils.auth import require_auth
 from peewee import DoesNotExist
 from app.utils.redis_cache import redis_client
 import json
+from flask_jwt_extended import jwt_required
 
 bp = Blueprint('equipamentos', __name__, url_prefix='/api/equipamentos')
 
 @bp.route('/', methods=['GET'])
+@jwt_required()
+@require_auth
 def listar_equipamentos():
-    equipamentos = redis_client.get('equipamentos')
-    if equipamentos:
-        return jsonify(json.loads(equipamentos)), 200
+    # Verifica se os equipamentos estão no cache
+    equipamentos_cache = redis_client.get('equipamentos')
+    if equipamentos_cache:
+        return jsonify(json.loads(equipamentos_cache)), 200
 
-    equipamentos = Equipamento.select()
-    schema = EquipamentoResponseSchema(many=True)
-    equipamentos_data = schema.dump([e.to_dict() for e in equipamentos])
+    # Filtra apenas os equipamentos com status ativo
+    equipamentos = Equipamento.select().where(Equipamento.status == 'ativo')
+    equipamentos_data = EquipamentoResponseSchema(many=True).dump([e.to_dict() for e in equipamentos])
     
-    redis_client.set('equipamentos', json.dumps(equipamentos_data), ex=60)
+    # Armazena os dados no cache
+    redis_client.set('equipamentos', json.dumps(equipamentos_data), ex=60)  # Cache por 60 segundos
     return jsonify(equipamentos_data), 200
 
 @bp.route('/<int:id>', methods=['GET'])
