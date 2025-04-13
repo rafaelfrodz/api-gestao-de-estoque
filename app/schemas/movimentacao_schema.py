@@ -21,6 +21,7 @@ class MovimentacaoCreateSchema(Schema):
     estoque_destino_id = fields.Int(required=True)
     localizacao_origem_id = fields.Int(required=True)
     localizacao_destino_id = fields.Int(required=True)
+    tipo = fields.Str(required=True, validate=validate.OneOf(["entrada", "saida"]))
     observacao = fields.Str(allow_none=True)
 
 class MovimentacaoResponseSchema(BaseSchema):

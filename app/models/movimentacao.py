@@ -63,7 +63,7 @@ class Movimentacao(TimestampModel):
                 movimentacao = cls.create(
                     equipamento=equipamento,
                     usuario=usuario,
-                    tipo_movimentacao=tipo,
+                    tipo=tipo,
                     localizacao=localizacao
                 )
 

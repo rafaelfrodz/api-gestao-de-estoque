@@ -55,6 +55,7 @@ class MovimentacaoService:
             localizacao_origem=localizacao_origem,
             localizacao_destino=localizacao_destino,
             usuario=usuario,
+            tipo=data['tipo'],
             status='pendente',
             observacao=data.get('observacao', '')
         )
