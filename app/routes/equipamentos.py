@@ -9,14 +9,23 @@ from app.schemas.equipamento_schema import (
 )
 from app.utils.auth import require_auth
 from peewee import DoesNotExist
+from app.utils.redis_cache import redis_client
+import json
 
 bp = Blueprint('equipamentos', __name__, url_prefix='/api/equipamentos')
 
 @bp.route('/', methods=['GET'])
 def listar_equipamentos():
+    equipamentos = redis_client.get('equipamentos')
+    if equipamentos:
+        return jsonify(json.loads(equipamentos)), 200
+
     equipamentos = Equipamento.select()
     schema = EquipamentoResponseSchema(many=True)
-    return jsonify(schema.dump([e.to_dict() for e in equipamentos])), 200
+    equipamentos_data = schema.dump([e.to_dict() for e in equipamentos])
+    
+    redis_client.set('equipamentos', json.dumps(equipamentos_data), ex=60)
+    return jsonify(equipamentos_data), 200
 
 @bp.route('/<int:id>', methods=['GET'])
 @require_auth
@@ -44,8 +53,9 @@ def criar_equipamento():
     
     equipamento = Equipamento.create(**data)
     
-    response_schema = EquipamentoResponseSchema()
-    return jsonify(response_schema.dump(equipamento.to_dict())), 201
+    # Atualiza o cache após a criação
+    redis_client.delete('equipamentos')  # Invalida o cache
+    return jsonify(EquipamentoResponseSchema().dump(equipamento.to_dict())), 201
 
 @bp.route('/<int:id>', methods=['PUT'])
 @require_auth
@@ -68,8 +78,9 @@ def atualizar_equipamento(id):
         
         equipamento.save()
         
-        response_schema = EquipamentoResponseSchema()
-        return jsonify(response_schema.dump(equipamento.to_dict())), 200
+        # Atualiza o cache após a atualização
+        redis_client.delete('equipamentos')  # Invalida o cache
+        return jsonify(EquipamentoResponseSchema().dump(equipamento.to_dict())), 200
     except DoesNotExist:
         return jsonify({"error": "Equipamento não encontrado"}), 404
     except Exception as e:
@@ -81,6 +92,9 @@ def deletar_equipamento(id):
     try:
         equipamento = Equipamento.get_by_id(id)
         equipamento.delete_instance()
+        
+        # Atualiza o cache após a exclusão
+        redis_client.delete('equipamentos')  # Invalida o cache
         return jsonify({"message": "Equipamento deletado com sucesso"}), 200
     except DoesNotExist:
         return jsonify({"error": "Equipamento não encontrado"}), 404 
