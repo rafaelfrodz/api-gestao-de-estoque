@@ -1,0 +1,1 @@
+CREATE DATABASE estoque_test_db;

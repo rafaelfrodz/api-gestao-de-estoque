@@ -1,11 +1,10 @@
-from peewee import PostgresqlDatabase
+from peewee import PostgresqlDatabase, OperationalError, Model
 import logging
 
-# Configuração de logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configuração do banco de dados
+# Configuração dos bancos
 db = PostgresqlDatabase(
     'estoque_db',
     user='postgres',
@@ -14,40 +13,41 @@ db = PostgresqlDatabase(
     port=5432
 )
 
+test_db = PostgresqlDatabase(
+    'estoque_test_db',
+    user='postgres',
+    password='postgres',
+    host='api-gestao-estoque-db-1',
+    port=5432
+)
+
+class BaseModel(Model):
+    class Meta:
+        database = None  # Banco será definido dinamicamente
+
 def init_db():
-    """Inicializa o banco de dados e cria as tabelas"""
+    """Inicializa ambos os bancos e cria tabelas"""
     from app.models import (
-        Usuario,
-        Estoque,
-        Localizacao,
-        TipoEquipamento,
-        Equipamento,
-        Movimentacao
+        Usuario, Estoque, Localizacao,
+        TipoEquipamento, Equipamento, Movimentacao
     )
-    
+
     try:
-        # Testa a conexão
-        logger.info("Testando conexão com o banco de dados...")
-        if db.is_closed():
-            db.connect()
-        logger.info("Conexão estabelecida com sucesso")
+        # Banco principal
+        logger.info("Configurando banco principal...")
+        BaseModel._meta.database = db
+        with db.atomic():
+            db.create_tables([Usuario, Estoque, Localizacao, TipoEquipamento, Equipamento, Movimentacao])
         
-        # Criar todas as tabelas
-        logger.info("Criando tabelas...")
-        db.create_tables([
-            Usuario,
-            Estoque,
-            Localizacao,
-            TipoEquipamento,
-            Equipamento,
-            Movimentacao
-        ])
-        logger.info("Tabelas criadas com sucesso")
-        
-    except Exception as e:
-        logger.error(f"Erro ao inicializar o banco de dados: {str(e)}")
+        # Banco de teste
+        logger.info("Configurando banco de teste...")
+        BaseModel._meta.database = test_db
+        with test_db.atomic():
+            test_db.create_tables([Usuario, Estoque, Localizacao, TipoEquipamento, Equipamento, Movimentacao])
+
+    except OperationalError as e:
+        logger.error(f"Falha na conexão: {e}")
         raise
     finally:
-        if not db.is_closed():
-            db.close()
-            logger.info("Conexão com o banco de dados fechada") 
+        db.close()
+        test_db.close()

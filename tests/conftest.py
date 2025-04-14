@@ -1,20 +1,20 @@
 import pytest
 from app import create_app
-from app.extensions import db
+from app.extensions import test_db
 from app.config import Config
 
 class TestConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@localhost:5432/estoque_test_db'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@api-gestao-estoque-db-1:5432/estoque_test_db'
 
 @pytest.fixture
 def app():
     app = create_app(TestConfig)
     with app.app_context():
-        db.create_all()
+        test_db.create_all()
         yield app
-        db.session.remove()
-        db.drop_all()
+        test_db.session.remove()
+        test_db.drop_all()
 
 @pytest.fixture
 def client(app):

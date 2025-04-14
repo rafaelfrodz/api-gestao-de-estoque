@@ -33,7 +33,7 @@ class Movimentacao(TimestampModel):
     def criar_movimentacao(cls, equipamento_id, usuario_id, tipo, localizacao_id):
         from app.utils.database import db
         
-        with db.atomic() as transaction:
+        with db.atomic() as transaction:        
             try:
                 equipamento = Equipamento.get_by_id(equipamento_id)
                 usuario = Usuario.get_by_id(usuario_id)
