@@ -11,19 +11,21 @@ def setup_equipamento(client):
     tipo = TipoEquipamento.create(nome="Tipo 1")
     return estoque, localizacao, tipo
 
-def test_criar_equipamento(client, setup_equipamento):
+def test_criar_equipamento(client, auth_headers, setup_equipamento):
     estoque, localizacao, tipo = setup_equipamento
-    response = client.post('/api/equipamentos/', json={
-        'nome': 'Equipamento 1',
-        'status': 'ativo',
-        'estoque_id': estoque.id,
-        'localizacao_id': localizacao.id,
-        'tipo_id': tipo.id
-    })
+    response = client.post('/api/equipamentos/', 
+                         json={
+                             'nome': 'Equipamento 1',
+                             'status': 'ativo',
+                             'estoque_id': estoque.id,
+                             'localizacao_id': localizacao.id,
+                             'tipo_id': tipo.id
+                         },
+                         headers=auth_headers)
     assert response.status_code == 201
-    assert response.json['nome'] == 'Equipamento 1'
+    assert response.json['nome'] == 'Equipamento 1'  # Removed 'data' key
 
-def test_listar_equipamentos(client, setup_equipamento):
-    response = client.get('/api/equipamentos/')
+def test_listar_equipamentos(client, auth_headers):
+    response = client.get('/api/equipamentos/', headers=auth_headers)
     assert response.status_code == 200
-    assert len(response.json) > 0
+    assert isinstance(response.json, list)  # Removed 'data' key

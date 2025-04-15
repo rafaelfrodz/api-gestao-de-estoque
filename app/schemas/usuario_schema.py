@@ -5,7 +5,7 @@ class UsuarioSchema(BaseSchema):
     nome = fields.Str(required=True, validate=validate.Length(min=3, max=100))
     email = fields.Email(required=True)
     senha_hash = fields.Str(required=True, load_only=True, validate=validate.Length(min=6))  # Alterado de senha para senha_hash
-    cargo = fields.Str(validate=validate.OneOf(['admin', 'operador']), default='operador')  # Campo cargo
+    cargo = fields.Str(validate=validate.OneOf(['admin', 'operador']), dump_default='operador')  # Campo cargo
 
     def validate_cargo(self, value):
         if value not in ['admin', 'operador']:
