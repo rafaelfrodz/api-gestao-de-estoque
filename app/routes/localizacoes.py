@@ -67,42 +67,4 @@ def criar_localizacao():
     except Exception as e:
         return error_response(str(e), 400)
 
-@bp.route('/<int:id>', methods=['PUT'])
-@jwt_required()
-@require_auth
-def atualizar_localizacao(id):
-    try:
-        localizacao = Localizacao.get_by_id(id)
-        data = request.get_json()
-        
-        if not data:
-            return error_response("Dados inválidos", 400)
-        
-        localizacao_data = localizacao_schema.load(data, partial=True)
-        for key, value in localizacao_data.items():
-            setattr(localizacao, key, value)
-        localizacao.save()
-        
-        redis_client.delete('localizacoes')
-        redis_client.delete(f'localizacao:{id}')
-        
-        return success_response(localizacao_schema.dump(localizacao), "Localização atualizada com sucesso")
-    except Localizacao.DoesNotExist:
-        return error_response("Localização não encontrada", 404)
-    except Exception as e:
-        return error_response(str(e), 400)
 
-@bp.route('/<int:id>', methods=['DELETE'])
-@jwt_required()
-@require_auth
-def deletar_localizacao(id):
-    try:
-        localizacao = Localizacao.get_by_id(id)
-        localizacao.delete_instance()
-        
-        redis_client.delete('localizacoes')
-        redis_client.delete(f'localizacao:{id}')
-        
-        return success_response(None, "Localização deletada com sucesso")
-    except Localizacao.DoesNotExist:
-        return error_response("Localização não encontrada", 404) 

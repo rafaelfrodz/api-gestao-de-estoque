@@ -101,3 +101,18 @@ def test_desativar_estoque(client, auth_headers):
 
     estoque_db = Estoque.get_by_id(estoque.id)
     assert not estoque_db.status
+
+
+def test_criar_estoque_nome_duplicado(client, auth_headers):
+    
+    nome_estoque = "Estoque Test Duplicado"
+    Estoque.create(nome=nome_estoque)
+    
+  
+    response = client.post('/api/estoques/', 
+                          json={'nome': nome_estoque},
+                          headers=auth_headers)
+    
+    assert response.status_code == 400
+    assert not response.json['success']
+    assert f"Já existe um estoque com o nome '{nome_estoque}'" in response.json['message']

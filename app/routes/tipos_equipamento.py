@@ -52,33 +52,3 @@ def criar_tipo_equipamento():
         return error_response(str(e), 400)
     except Exception as e:
         return error_response(str(e), 400)
-
-@bp.route('/<int:id>', methods=['PUT'])
-@jwt_required()
-@require_auth
-def atualizar_tipo_equipamento(id):
-    try:
-        tipo = TipoEquipamento.get_by_id(id)
-        data = request.get_json()
-        
-        if not data.get('nome'):
-            raise ValidationError("O nome é obrigatório")
-        
-        tipo.nome = data['nome']
-        tipo.save()
-        return success_response(tipo.to_dict(), "Tipo de equipamento atualizado com sucesso")
-    except TipoEquipamento.DoesNotExist:
-        return error_response("Tipo de equipamento não encontrado", 404)
-    except Exception as e:
-        return error_response(str(e), 400)
-
-@bp.route('/<int:id>', methods=['DELETE'])
-@jwt_required()
-@require_auth
-def deletar_tipo_equipamento(id):
-    try:
-        tipo = TipoEquipamento.get_by_id(id)
-        tipo.delete_instance()
-        return success_response(None, "Tipo de equipamento deletado com sucesso")
-    except TipoEquipamento.DoesNotExist:
-        return error_response("Tipo de equipamento não encontrado", 404) 

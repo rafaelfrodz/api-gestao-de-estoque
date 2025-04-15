@@ -25,3 +25,9 @@ def test_listar_localizacoes(client, auth_headers, setup_localizacao):
     response = client.get('/api/localizacoes/', headers=auth_headers)
     assert response.status_code == 200
     assert len(response.json['data']) >= 1
+
+def test_obter_localizacao_nao_encontrada(client, auth_headers):
+    response = client.get('/api/localizacoes/99999', headers=auth_headers)
+    assert response.status_code == 404
+    assert not response.json['success']
+    assert 'Localização não encontrada' in response.json['message']
