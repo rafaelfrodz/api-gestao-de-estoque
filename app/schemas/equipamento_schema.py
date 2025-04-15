@@ -28,4 +28,16 @@ class EquipamentoSchema(EquipamentoBaseSchema):
 class EquipamentoResponseSchema(EquipamentoSchema):
     estoque = fields.Nested(EstoqueSchema, dump_only=True)
     localizacao = fields.Nested(LocalizacaoSchema, dump_only=True)
-    tipo = fields.Nested(TipoEquipamentoSchema, dump_only=True) 
+    tipo = fields.Nested(TipoEquipamentoSchema, dump_only=True)
+
+from marshmallow import Schema, fields
+
+class EquipamentoEstoqueResponseSchema(Schema):
+    id = fields.Integer(dump_only=True)
+    nome = fields.String()
+    status = fields.String()
+    categoria = fields.String(attribute='tipo.categoria')  # Changed to tipo.categoria
+    tipo = fields.String(attribute='tipo.nome')
+    localizacao = fields.String(attribute='localizacao.nome')
+    criado_em = fields.DateTime(attribute='created_at')
+    atualizado_em = fields.DateTime(attribute='updated_at')

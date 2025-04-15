@@ -14,9 +14,9 @@ class UsuarioSchema(BaseSchema):
 
 class UsuarioLoginSchema(Schema):
     email = fields.Email(required=True)
-    senha_hash = fields.Str(required=True, load_only=True)  # Alterado de senha para senha_hash
+    senha_hash = fields.Str(required=True, load_only=True)
 
 class UsuarioResponseSchema(BaseSchema):
     nome = fields.Str()
     email = fields.Email()
-    cargo = fields.Str()  # Campo cargo
+    cargo = fields.Str() 
