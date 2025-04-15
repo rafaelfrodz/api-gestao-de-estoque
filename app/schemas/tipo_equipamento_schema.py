@@ -11,4 +11,8 @@ class TipoEquipamentoUpdateSchema(Schema):
     nome = fields.Str(validate=validate.Length(min=3, max=100))
 
 class TipoEquipamentoResponseSchema(BaseSchema):
-    nome = fields.Str() 
+    nome = fields.Str()
+
+# Schema instances
+tipo_create_schema = TipoEquipamentoCreateSchema()
+tipo_schema = TipoEquipamentoSchema()

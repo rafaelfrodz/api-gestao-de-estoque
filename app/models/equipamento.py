@@ -14,6 +14,10 @@ class Equipamento(TimestampModel):
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
     
+    def desativar(self):
+        self.status = "inativo"
+        return self.save()
+    
     @classmethod
     def get_ativos(cls):
         return cls.select().where(cls.status == 'ativo')

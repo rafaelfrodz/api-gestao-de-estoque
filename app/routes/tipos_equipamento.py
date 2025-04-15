@@ -5,7 +5,7 @@ from app.utils.auth import require_auth
 from app.models.tipo_equipamento import TipoEquipamento
 from app.utils.errors import NotFoundError, ValidationError
 import logging
-from app.schemas.tipo_equipamento import tipo_create_schema, tipo_schema
+from app.schemas.tipo_equipamento_schema import tipo_create_schema, tipo_schema
 
 logger = logging.getLogger(__name__)
 
