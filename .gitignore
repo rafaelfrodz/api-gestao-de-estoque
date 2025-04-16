@@ -1,28 +1,56 @@
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-*.db
-*.sqlite3
-*.egg-info/
-*.env
-
-# Virtual Environments
-venv/
+*$py.class
+*.so
+.Python
 env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
 ENV/
-.venv/
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Database
+*.sqlite3
+*.db
+*.sql
+
+# Logs
+*.log
+logs/
+log/
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage.xml
+.pytest_cache/
 
 # Docker
-*.log
+.docker/
 docker-compose.override.yml
 
-# IDEs
-.vscode/
-.idea/
-*.swp
-
-# System Files
-.DS_Store
-Thumbs.db
+# Redis
+dump.rdb

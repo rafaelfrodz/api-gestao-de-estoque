@@ -1,24 +1,25 @@
 from peewee import PostgresqlDatabase, OperationalError, Model
 import logging
+from app.config import Config, TestConfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configuração dos bancos
+# Database configuration using environment variables
 db = PostgresqlDatabase(
-    'estoque_db',
-    user='postgres',
-    password='postgres',
-    host='api-gestao-estoque-db-1',
-    port=5432
+    Config.DB_NAME,
+    user=Config.DB_USER,
+    password=Config.DB_PASSWORD,
+    host=Config.DB_HOST,
+    port=Config.DB_PORT
 )
 
 test_db = PostgresqlDatabase(
     'estoque_test_db',
-    user='postgres',
-    password='postgres',
-    host='api-gestao-estoque-db-1',
-    port=5432
+    user=TestConfig.DB_USER,
+    password=TestConfig.DB_PASSWORD,
+    host=TestConfig.DB_HOST,
+    port=TestConfig.DB_PORT
 )
 
 class BaseModel(Model):
