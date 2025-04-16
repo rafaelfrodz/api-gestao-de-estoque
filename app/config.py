@@ -14,9 +14,14 @@ class Config:
     CACHE_TYPE = 'simple'
     CACHE_DEFAULT_TIMEOUT = 60  # 60 segundos
     
-    # Database
     DB_HOST = os.environ.get('DB_HOST', 'localhost')
     DB_PORT = int(os.environ.get('DB_PORT', 5432))
     DB_USER = os.environ.get('DB_USER', 'postgres')
     DB_PASSWORD = os.environ.get('DB_PASSWORD', 'postgres')
-    DB_NAME = os.environ.get('DB_NAME', 'estoque_db') 
+    DB_NAME = os.environ.get('DB_NAME', 'estoque_db')
+
+
+class TestConfig(Config):
+    TESTING = True
+    SECRET_KEY = 'test-secret-key'
+    JWT_SECRET_KEY = 'test-jwt-secret-key'

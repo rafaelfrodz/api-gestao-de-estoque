@@ -14,36 +14,27 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Inicializar extensões
+    # Initialize extensions
     CORS(app)
     JWTManager(app)
     
-    # Inicializar banco de dados
-    init_db()
+    # Initialize database based on environment
+    init_db(testing=config_class.TESTING)
     
     @app.before_request
     def before_request():
-        if db.is_closed():
-            db.connect()
-        if test_db.is_closed():
-            test_db.connect()
+        current_db = test_db if config_class.TESTING else db
+        if current_db.is_closed():
+            current_db.connect()
     
     @app.after_request
     def after_request(response):
-        if not db.is_closed():
-            db.close()
-        if not test_db.is_closed():
-            test_db.close()
+        current_db = test_db if config_class.TESTING else db
+        if not current_db.is_closed():
+            current_db.close()
         return response
     
-    @app.teardown_appcontext
-    def teardown_db(exception):
-        if not db.is_closed():
-            db.close()
-        if not test_db.is_closed():
-            test_db.close()
-    
-    # Registrar blueprints
+    # Register blueprints
     blueprints = [
         (auth_bp, "auth"),
         (estoques_bp, "estoques"),
@@ -57,4 +48,4 @@ def create_app(config_class=Config):
         app.register_blueprint(blueprint)
         app.logger.info(f"Blueprint {name} registrado com sucesso")
     
-    return app 
+    return app

@@ -23,9 +23,9 @@ test_db = PostgresqlDatabase(
 
 class BaseModel(Model):
     class Meta:
-        database = None  # Banco será definido dinamicamente
+        database = db  
 
-def init_db():
+def init_db(testing=False):
     """Inicializa ambos os bancos e cria tabelas"""
     from app.models import (
         Usuario, Estoque, Localizacao,
@@ -33,21 +33,25 @@ def init_db():
     )
 
     try:
-        # Banco principal
-        logger.info("Configurando banco principal...")
-        BaseModel._meta.database = db
-        with db.atomic():
-            db.create_tables([Usuario, Estoque, Localizacao, TipoEquipamento, Equipamento, Movimentacao])
+        models = [Usuario, Estoque, Localizacao, TipoEquipamento, Equipamento, Movimentacao]
+        current_db = test_db if testing else db
+    
+        for model in models:
+            model._meta.database = current_db
         
-        # Banco de teste
-        logger.info("Configurando banco de teste...")
-        BaseModel._meta.database = test_db
-        with test_db.atomic():
-            test_db.create_tables([Usuario, Estoque, Localizacao, TipoEquipamento, Equipamento, Movimentacao])
-
-    except OperationalError as e:
-        logger.error(f"Falha na conexão: {e}")
+        # Create tables
+        if current_db.is_closed():
+            current_db.connect()
+            
+        current_db.create_tables(models, safe=True)
+        
+    except Exception as e:
+        logger.error(f"Falha na inicialização do banco: {e}")
         raise
     finally:
-        db.close()
-        test_db.close()
+        if not current_db.is_closed():
+            current_db.close()
+        if not db.is_closed():
+            db.close()
+        if not test_db.is_closed():
+            test_db.close()
