@@ -81,8 +81,7 @@ def test_listar_equipamentos_com_filtros(client, auth_headers):
         tipo=tipo,
         localizacao=local
     )
-    
-    # Test status filter
+
     response = client.get(
         f'/api/estoques/{estoque.id}/equipamentos?status=ativo',
         headers=auth_headers

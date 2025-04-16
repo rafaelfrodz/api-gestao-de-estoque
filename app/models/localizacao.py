@@ -8,6 +8,10 @@ class Localizacao(TimestampModel):
 
     class Meta:
         table_name = 'localizacoes'
+        indexes = (
+            # Index unico para nome da loc e estoque_id
+            (('nome', 'estoque_id'), True),
+        )
 
     @classmethod
     def get_by_estoque(cls, estoque_id):
@@ -16,9 +20,14 @@ class Localizacao(TimestampModel):
     @classmethod
     def criar_localizacao(cls, nome, estoque_id):
         try:
+            #
+            if cls.select().where(
+                (cls.nome == nome) & 
+                (cls.estoque_id == estoque_id)
+            ).exists():
+                raise ValueError(f"Já existe uma localização com o nome '{nome}' neste estoque")
+            
             estoque = Estoque.get_by_id(estoque_id)
             return cls.create(nome=nome, estoque=estoque)
         except Estoque.DoesNotExist:
             raise ValueError(f"Estoque com ID {estoque_id} não encontrado")
-        except IntegrityError:
-            raise ValueError(f"Já existe uma localização com o nome '{nome}' neste estoque") 
