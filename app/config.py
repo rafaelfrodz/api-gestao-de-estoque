@@ -12,14 +12,15 @@ class Config:
     
     # Cache
     CACHE_TYPE = 'simple'
-    CACHE_DEFAULT_TIMEOUT = 60  # 60 segundos
+    CACHE_DEFAULT_TIMEOUT = 60 
     
+    # Database
     DB_HOST = os.environ.get('DB_HOST', 'localhost')
     DB_PORT = int(os.environ.get('DB_PORT', 5432))
     DB_USER = os.environ.get('DB_USER', 'postgres')
     DB_PASSWORD = os.environ.get('DB_PASSWORD', 'postgres')
     DB_NAME = os.environ.get('DB_NAME', 'estoque_db')
-
+    TESTING = False
 
 class TestConfig(Config):
     TESTING = True
