@@ -9,16 +9,17 @@ from app.routes.equipamentos import bp as equipamentos_bp
 from app.routes.localizacoes import bp as localizacoes_bp
 from app.routes.movimentacoes import bp as movimentacoes_bp
 from app.routes.tipos_equipamento import bp as tipos_equipamento_bp
+from app.routes.health import bp as health_bp
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Initialize extensions
+    # Iniciando extensões do Flask e Flask JWT Extended
     CORS(app)
     JWTManager(app)
     
-    # Initialize database based on environment
+    # Iniciando o banco de dados
     init_db(testing=config_class.TESTING)
     
     @app.before_request
@@ -34,14 +35,15 @@ def create_app(config_class=Config):
             current_db.close()
         return response
     
-    # Register blueprints
+    # Registro das blueprints
     blueprints = [
         (auth_bp, "auth"),
         (estoques_bp, "estoques"),
         (equipamentos_bp, "equipamentos"),
         (localizacoes_bp, "localizacoes"),
         (movimentacoes_bp, "movimentacoes"),
-        (tipos_equipamento_bp, "tipos_equipamento")
+        (tipos_equipamento_bp, "tipos_equipamento"),
+        (health_bp, "health"),
     ]
     
     for blueprint, name in blueprints:

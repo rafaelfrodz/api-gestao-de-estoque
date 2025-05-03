@@ -5,114 +5,85 @@ from app.models.tipo_equipamento import TipoEquipamento
 from app.utils.errors import NotFoundError, ValidationError
 
 class EquipamentoService:
-    def criar_equipamento(self, data):
-        """
-        Cria um novo equipamento
-        """
-        # Validar estoque
+    @staticmethod
+    def criar_equipamento(data):
+        erros = {}
+        # Validação de estoque
         try:
             estoque = Estoque.get_by_id(data['estoque_id'])
         except Estoque.DoesNotExist:
-            raise NotFoundError("Estoque não encontrado")
+            erros['estoque_id'] = "Estoque não encontrado"
+            estoque = None
         
-        # Validar localização
+        # Validação de localização
         try:
             localizacao = Localizacao.get_by_id(data['localizacao_id'])
         except Localizacao.DoesNotExist:
-            raise NotFoundError("Localização não encontrada")
+            erros['localizacao_id'] = "Localização não encontrada"
+            localizacao = None
         
-        # Validar tipo
+        # Validação de tipo
         try:
             tipo = TipoEquipamento.get_by_id(data['tipo_id'])
         except TipoEquipamento.DoesNotExist:
-            raise NotFoundError("Tipo de equipamento não encontrado")
+            erros['tipo_id'] = "Tipo de equipamento não encontrado"
+            tipo = None
         
-        # Verificar se a localização pertence ao estoque
+        if erros:
+            raise ValidationError(erros)
+        # Verifica se a localização pertence ao estoque
         if localizacao.estoque_id != estoque.id:
             raise ValidationError("A localização não pertence ao estoque selecionado")
         
-        # Criar o equipamento
         equipamento = Equipamento.create(
             nome=data['nome'],
             estoque=estoque,
             localizacao=localizacao,
-            tipo=tipo
+            tipo=tipo,
+            status=data.get('status', 'ativo')
         )
-        
-        return equipamento
-    
-    def atualizar_equipamento(self, equipamento_id, data):
-        """
-        Atualiza um equipamento existente
-        """
+        return EquipamentoService.to_dict(equipamento)
+
+    @staticmethod
+    def desativar_equipamento(equipamento_id):
         try:
             equipamento = Equipamento.get_by_id(equipamento_id)
         except Equipamento.DoesNotExist:
             raise NotFoundError("Equipamento não encontrado")
-        
-        # Validar estoque se fornecido
-        if 'estoque_id' in data:
-            try:
-                estoque = Estoque.get_by_id(data['estoque_id'])
-                equipamento.estoque = estoque
-            except Estoque.DoesNotExist:
-                raise NotFoundError("Estoque não encontrado")
-        
-        # Validar localização se fornecida
-        if 'localizacao_id' in data:
-            try:
-                localizacao = Localizacao.get_by_id(data['localizacao_id'])
-                equipamento.localizacao = localizacao
-            except Localizacao.DoesNotExist:
-                raise NotFoundError("Localização não encontrada")
-        
-        # Validar tipo se fornecido
-        if 'tipo_id' in data:
-            try:
-                tipo = TipoEquipamento.get_by_id(data['tipo_id'])
-                equipamento.tipo = tipo
-            except TipoEquipamento.DoesNotExist:
-                raise NotFoundError("Tipo de equipamento não encontrado")
-        
-        # Atualizar nome se fornecido
-        if 'nome' in data:
-            equipamento.nome = data['nome']
-        
-        # Atualizar status se fornecido
-        if 'status' in data:
-            equipamento.status = data['status']
-        
-        # Verificar se a localização pertence ao estoque
-        if equipamento.localizacao.estoque_id != equipamento.estoque.id:
-            raise ValidationError("A localização não pertence ao estoque selecionado")
-        
-        # Salvar as alterações
-        equipamento.save()
-        
-        return equipamento
-    
-    def desativar_equipamento(self, equipamento_id):
-        """
-        Desativa um equipamento
-        """
-        try:
-            equipamento = Equipamento.get_by_id(equipamento_id)
-        except Equipamento.DoesNotExist:
-            raise NotFoundError("Equipamento não encontrado")
-        
         equipamento.status = 'inativo'
         equipamento.save()
-        return equipamento
-    
-    def ativar_equipamento(self, equipamento_id):
-        """
-        Ativa um equipamento
-        """
+        return EquipamentoService.to_dict(equipamento)
+
+    @staticmethod
+    def ativar_equipamento(equipamento_id):
         try:
             equipamento = Equipamento.get_by_id(equipamento_id)
         except Equipamento.DoesNotExist:
             raise NotFoundError("Equipamento não encontrado")
-        
         equipamento.status = 'ativo'
         equipamento.save()
-        return equipamento 
+        return EquipamentoService.to_dict(equipamento)
+
+    @staticmethod
+    def listar_ativos():
+        Equipamento.select().where(Equipamento.status == 'ativo')
+        equipamentos = Equipamento.select().where(Equipamento.status == 'ativo')
+        return [EquipamentoService.to_dict(equipamento) for equipamento in equipamentos]
+    
+    @staticmethod
+    def buscar_por_id(equipamento_id):
+        equipamento = Equipamento.get_by_id(equipamento_id)
+        return EquipamentoService.to_dict(equipamento)
+
+    @staticmethod
+    def to_dict(equipamento):
+        return {
+            'id': equipamento.id,
+            'nome': equipamento.nome,
+            'status': equipamento.status,
+            'estoque_id': equipamento.estoque.id,
+            'localizacao_id': equipamento.localizacao.id,
+            'tipo_id': equipamento.tipo.id,
+            'created_at': equipamento.created_at,
+            'updated_at': equipamento.updated_at
+        }
