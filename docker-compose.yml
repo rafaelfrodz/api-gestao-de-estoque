@@ -5,39 +5,30 @@ services:
       - "5001:5000"
     volumes:
       - .:/app
-    environment:
-      - FLASK_APP=run.py
-      - FLASK_ENV=development
-      - FLASK_DEBUG=1
-      - DB_HOST=api-gestao-estoque-db-1
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_NAME=estoque_db
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+    env_file:
+      - ./.env
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
-      - app-network
+      - cache
+      - backend
+      - database
 
   db:
     image: postgres:15
     container_name: api-gestao-estoque-db-1
     ports:
       - "5432:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=estoque_db
+    env_file:
+      - ./.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Executa o script de inicialização
     networks:
-      - app-network
+      - database
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -49,7 +40,7 @@ services:
     ports:
       - "6379:6379"
     networks:
-      - app-network
+      - cache
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -57,7 +48,11 @@ services:
       retries: 3
 
 networks:
-  app-network:
+  backend:
+    driver: bridge
+  database:
+    driver: bridge
+  cache:
     driver: bridge
 
 volumes:
